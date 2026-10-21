@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    
+    /* Warm Ivory & Cream Customer Palette */
+    --color-cream-50: #FAF8F5;
+    --color-cream-100: #F5EFEB;
+    --color-cream-200: #EFE8E0;
+    --color-cream-300: #E3D9CC;
+    --color-cream-400: #D4C6B3;
+    
+    /* Deep Forest Green */
+    --color-forest-950: #0B1C15;
+    --color-forest-900: #132E22;
+    --color-forest-800: #1B4030;
+    --color-forest-700: #235540;
+    --color-forest-600: #2D6A50;
+    
+    /* Luxury Gold / Brass */
+    --color-gold-400: #DFC196;
+    --color-gold-500: #C5A880;
+    --color-gold-600: #AB8E66;
+    --color-gold-700: #8E7450;
+    
+    /* Operations Slate / Charcoal */
+    --color-ops-950: #090D14;
+    --color-ops-900: #0E1626;
+    --color-ops-850: #131E33;
+    --color-ops-800: #1C2A44;
+    --color-ops-700: #2C3E5F;
+    --color-ops-600: #475D85;
+    --color-ops-border: #1E2E4A;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-cream-50);
+  color: #1F2421;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+.dark-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Print layout for QR table badges */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-after: always;
+  }
+}
