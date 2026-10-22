@@ -3,13 +3,13 @@ import { useRestaurant } from '../../../context/RestaurantContext';
 import { RestaurantTable } from '../../../types';
 import { TableQrModal } from '../components/TableQrModal';
 import { QRCodeSVG } from 'qrcode.react';
-import { 
-  Plus, 
-  Grid3X3, 
-  QrCode, 
-  Printer, 
-  Trash2, 
-  Edit3, 
+import {
+  Plus,
+  Grid3X3,
+  QrCode,
+  Printer,
+  Trash2,
+  Edit3,
   ExternalLink,
   Users,
   CheckCircle2,
@@ -152,11 +152,10 @@ export const AdminTablesPage: React.FC = () => {
             return (
               <div
                 key={table.id}
-                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
-                  isOccupied
+                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${isOccupied
                     ? 'bg-stone-900/90 border-amber-600/60 shadow-xs'
                     : 'bg-stone-900/90 border-stone-800'
-                }`}
+                  }`}
               >
                 <div>
                   {/* Top table header */}
@@ -176,13 +175,12 @@ export const AdminTablesPage: React.FC = () => {
                     </div>
 
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        isOccupied
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isOccupied
                           ? 'bg-amber-950 text-amber-400 border border-amber-800'
                           : table.status === 'reserved'
-                          ? 'bg-indigo-950 text-indigo-400 border border-indigo-800'
-                          : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                      }`}
+                            ? 'bg-indigo-950 text-indigo-400 border border-indigo-800'
+                            : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        }`}
                     >
                       {table.status}
                     </span>
@@ -211,7 +209,7 @@ export const AdminTablesPage: React.FC = () => {
                   </button>
 
                   <a
-                    href={`/menu/${table.code}`}
+                    href={`${window.location.origin}/menu/${table.code}`}
                     target="_blank"
                     rel="noreferrer"
                     className="p-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300"

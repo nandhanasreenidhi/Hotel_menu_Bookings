@@ -98,7 +98,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({ table, isOpen, onClo
           {/* Action Buttons */}
           <div className="w-full mt-5 flex items-center justify-between gap-3 pt-3 border-t border-stone-800">
             <a
-              href={`/menu/${table.code}`}
+              href={targetUrl}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
