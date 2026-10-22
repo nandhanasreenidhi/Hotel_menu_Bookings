@@ -68,7 +68,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
               <div className="flex items-center gap-2">
                 {cart.length > 0 && (
                   <button
-                    onClick={clearCart}
+                    onClick={() => clearCart()}
                     className="text-[11px] text-stone-300 hover:text-white underline underline-offset-2 px-2 py-1"
                   >
                     Clear

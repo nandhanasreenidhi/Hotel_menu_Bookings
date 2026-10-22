@@ -10,7 +10,6 @@ import {
   SpiceLevel,
   PaymentMethod,
   PaymentStatus,
-  DietaryType,
 } from '../types';
 import {
   initialCategories,
@@ -78,7 +77,7 @@ interface RestaurantContextType {
   addToCart: (item: MenuItem, options?: { spice?: SpiceLevel; instructions?: string }) => void;
   updateCartQuantity: (itemId: string, delta: number) => void;
   removeFromCart: (itemId: string) => void;
-  clearCart: () => void;
+  clearCart: (tableCode?: string) => void;
   cartSubtotal: number;
   cartTax: number;
   cartServiceCharge: number;
@@ -87,6 +86,7 @@ interface RestaurantContextType {
 
   // System
   resetToDefaults: () => void;
+  clearDemoOrders: () => void;
   newOrderAlertCount: number;
   clearNewOrderAlert: () => void;
 }
@@ -151,17 +151,32 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   });
 
-  // Customer Cart state
-  const [cart, setCart] = useState<CartItem[]>(() => {
+  // Customer Cart state isolated per table code: { [tableCode]: CartItem[] }
+  const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>(() => {
     try {
-      const saved = localStorage.getItem(`${STORAGE_KEY}_cart`);
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(`${STORAGE_KEY}_table_carts`);
+      if (saved) return JSON.parse(saved);
+      // Backward compatibility: migrate previous single cart to T-04 if present
+      const oldCart = localStorage.getItem(`${STORAGE_KEY}_cart`);
+      if (oldCart) {
+        const parsed = JSON.parse(oldCart);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return { 'T-04': parsed };
+        }
+      }
+      return {};
     } catch {
-      return [];
+      return {};
     }
   });
 
-  const [activeTableCode, setActiveTableCode] = useState<string>('T-04');
+  const normalizeTableCode = (code: string) => code.trim().toUpperCase();
+
+  const [activeTableCode, setActiveTableCodeState] = useState<string>('T-04');
+
+  const setActiveTableCode = (code: string) => {
+    setActiveTableCodeState(normalizeTableCode(code));
+  };
   const [newOrderAlertCount, setNewOrderAlertCount] = useState<number>(0);
 
   // Sync to LocalStorage on changes
@@ -215,11 +230,11 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
 
   useEffect(() => {
     try {
-      localStorage.setItem(`${STORAGE_KEY}_cart`, JSON.stringify(cart));
+      localStorage.setItem(`${STORAGE_KEY}_table_carts`, JSON.stringify(tableCarts));
     } catch (e) {
-      console.warn('Failed to sync cart', e);
+      console.warn('Failed to sync table carts', e);
     }
-  }, [cart]);
+  }, [tableCarts]);
 
   // Handle cross-tab storage updates
   useEffect(() => {
@@ -236,6 +251,9 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       }
       if (e.key === `${STORAGE_KEY}_tables` && e.newValue) {
         setTables(JSON.parse(e.newValue));
+      }
+      if (e.key === `${STORAGE_KEY}_table_carts` && e.newValue) {
+        setTableCarts(JSON.parse(e.newValue));
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -323,23 +341,58 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     setStaff(prev => prev.filter(s => s.id !== id));
   };
 
-  // Cart operations
-  const addToCart = (item: MenuItem, options?: { spice?: SpiceLevel; instructions?: string }) => {
+
+  // Cart operations — each table has its own cart
+  const cart = tableCarts[normalizeTableCode(activeTableCode)] ?? [];
+
+  const setCart = (
+    updater: CartItem[] | ((previous: CartItem[]) => CartItem[]),
+    tableCode = activeTableCode
+  ) => {
+    const key = normalizeTableCode(tableCode);
+
+    setTableCarts(previous => {
+      const currentCart = previous[key] ?? [];
+      const nextCart =
+        typeof updater === 'function'
+          ? updater(currentCart)
+          : updater;
+
+      return {
+        ...previous,
+        [key]: nextCart,
+      };
+    });
+  };
+
+  const addToCart = (
+    item: MenuItem,
+    options?: { spice?: SpiceLevel; instructions?: string }
+  ) => {
     if (!item.isAvailable) return;
-    setCart(prev => {
-      const existingIndex = prev.findIndex(
-        ci => ci.menuItem.id === item.id && ci.selectedSpice === options?.spice
+
+    setCart(previous => {
+      const existingIndex = previous.findIndex(
+        ci =>
+          ci.menuItem.id === item.id &&
+          ci.selectedSpice === (options?.spice || item.spiceLevel)
       );
-      if (existingIndex > -1) {
-        const next = [...prev];
-        next[existingIndex].quantity += 1;
-        if (options?.instructions) {
-          next[existingIndex].specialInstructions = options.instructions;
-        }
-        return next;
+
+      if (existingIndex !== -1) {
+        return previous.map((ci, index) =>
+          index === existingIndex
+            ? {
+              ...ci,
+              quantity: ci.quantity + 1,
+              specialInstructions:
+                options?.instructions || ci.specialInstructions,
+            }
+            : ci
+        );
       }
+
       return [
-        ...prev,
+        ...previous,
         {
           menuItem: item,
           quantity: 1,
@@ -351,32 +404,45 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const updateCartQuantity = (itemId: string, delta: number) => {
-    setCart(prev =>
-      prev
-        .map(ci => {
-          if (ci.menuItem.id === itemId) {
-            const nextQty = ci.quantity + delta;
-            return nextQty > 0 ? { ...ci, quantity: nextQty } : null;
-          }
-          return ci;
+    setCart(previous =>
+      previous
+        .map(item => {
+          if (item.menuItem.id !== itemId) return item;
+
+          const quantity = item.quantity + delta;
+          return quantity > 0 ? { ...item, quantity } : null;
         })
-        .filter((ci): ci is CartItem => ci !== null)
+        .filter((item): item is CartItem => item !== null)
     );
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart(prev => prev.filter(ci => ci.menuItem.id !== itemId));
+    setCart(previous =>
+      previous.filter(item => item.menuItem.id !== itemId)
+    );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = (tableCode = activeTableCode) => {
+    setCart([], tableCode);
+  };
 
-  const cartSubtotal = cart.reduce((acc, curr) => acc + curr.menuItem.price * curr.quantity, 0);
+  const cartSubtotal = cart.reduce(
+    (total, item) => total + item.menuItem.price * item.quantity,
+    0
+  );
+
   const cartTax = (cartSubtotal * settings.gstPercentage) / 100;
+
   const cartServiceCharge = settings.isServiceChargeEnabled
     ? (cartSubtotal * settings.serviceChargePercentage) / 100
     : 0;
+
   const cartTotal = cartSubtotal + cartTax + cartServiceCharge;
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const cartCount = cart.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
 
   // Order actions
   const createOrder = ({
@@ -394,7 +460,26 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     paymentMethod: PaymentMethod;
     specialNotes?: string;
   }): Order | null => {
-    if (cart.length === 0) return null;
+    const orderCart =
+      tableCarts[normalizeTableCode(tableCode)] ?? [];
+
+    if (orderCart.length === 0) return null;
+
+    // Calculate the total for this table's cart
+    const orderSubtotal = orderCart.reduce(
+      (total, item) => total + item.menuItem.price * item.quantity,
+      0
+    );
+
+    const orderTax =
+      (orderSubtotal * settings.gstPercentage) / 100;
+
+    const orderServiceCharge = settings.isServiceChargeEnabled
+      ? (orderSubtotal * settings.serviceChargePercentage) / 100
+      : 0;
+
+    const orderTotal =
+      orderSubtotal + orderTax + orderServiceCharge;
 
     const table = getTableByCode(tableCode) || {
       id: generateId('tbl_virtual'),
@@ -415,7 +500,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       customerName: customerName || 'Guest Diner',
       customerPhone,
       guestCount: guestCount || 2,
-      items: cart.map(ci => ({
+      items: orderCart.map(ci => ({
         id: generateId('oi'),
         menuItemId: ci.menuItem.id,
         name: ci.menuItem.name,
@@ -425,10 +510,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         spiceLevel: ci.selectedSpice,
         specialInstructions: ci.specialInstructions,
       })),
-      subtotal: cartSubtotal,
-      tax: cartTax,
-      serviceCharge: cartServiceCharge,
-      total: cartTotal,
+      subtotal: orderSubtotal,
+      tax: orderTax,
+      serviceCharge: orderServiceCharge,
+      total: orderTotal,
       status: 'placed',
       paymentMethod,
       paymentStatus: paymentMethod.startsWith('online') ? 'paid' : 'pending',
@@ -443,7 +528,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       )
     );
     setNewOrderAlertCount(prev => prev + 1);
-    clearCart();
+    clearCart(tableCode);
     return newOrder;
   };
 
@@ -452,11 +537,11 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              status: 'accepted',
-              acceptedAt: new Date().toISOString(),
-              waiterName,
-            }
+            ...ord,
+            status: 'accepted',
+            acceptedAt: new Date().toISOString(),
+            waiterName,
+          }
           : ord
       )
     );
@@ -467,10 +552,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              status: 'rejected',
-              rejectionReason: reason,
-            }
+            ...ord,
+            status: 'rejected',
+            rejectionReason: reason,
+          }
           : ord
       )
     );
@@ -481,10 +566,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              status: 'preparing',
-              preparingAt: ord.preparingAt || new Date().toISOString(),
-            }
+            ...ord,
+            status: 'preparing',
+            preparingAt: ord.preparingAt || new Date().toISOString(),
+          }
           : ord
       )
     );
@@ -495,10 +580,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              status: 'ready',
-              readyAt: new Date().toISOString(),
-            }
+            ...ord,
+            status: 'ready',
+            readyAt: new Date().toISOString(),
+          }
           : ord
       )
     );
@@ -509,10 +594,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              status: 'served',
-              servedAt: new Date().toISOString(),
-            }
+            ...ord,
+            status: 'served',
+            servedAt: new Date().toISOString(),
+          }
           : ord
       )
     );
@@ -523,10 +608,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       prev.map(ord =>
         ord.id === orderId
           ? {
-              ...ord,
-              paymentStatus: status,
-              paymentMethod: method || ord.paymentMethod,
-            }
+            ...ord,
+            paymentStatus: status,
+            paymentMethod: method || ord.paymentMethod,
+          }
           : ord
       )
     );
@@ -537,6 +622,30 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const clearNewOrderAlert = () => setNewOrderAlertCount(0);
+
+  const clearDemoOrders = () => {
+    // Remove all existing orders
+    setOrders([]);
+    localStorage.setItem(`${STORAGE_KEY}_orders`, JSON.stringify([]));
+
+    // Make every table available while preserving its QR code and details
+    setTables(previous =>
+      previous.map(table => ({
+        ...table,
+        status: 'available',
+        activeOrderId: undefined,
+      }))
+    );
+
+    // Remove old carts
+    setTableCarts({});
+    localStorage.removeItem(`${STORAGE_KEY}_cart`);
+    localStorage.setItem(`${STORAGE_KEY}_table_carts`, JSON.stringify({}));
+
+    // Clear old order notifications
+    setNewOrderAlertCount(0);
+  };
+
 
   const resetToDefaults = () => {
     localStorage.removeItem(`${STORAGE_KEY}_settings`);
@@ -602,6 +711,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         cartTotal,
         cartCount,
         resetToDefaults,
+        clearDemoOrders,
         newOrderAlertCount,
         clearNewOrderAlert,
       }}

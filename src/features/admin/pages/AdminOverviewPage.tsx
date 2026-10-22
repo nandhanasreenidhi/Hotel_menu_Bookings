@@ -2,22 +2,29 @@ import React from 'react';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import { formatINR, formatDateTime } from '../../../lib/utils';
 import { StatusBadge, PaymentBadge } from '../../../components/common/StatusBadge';
-import { 
-  TrendingUp, 
-  ShoppingBag, 
-  UtensilsCrossed, 
-  Clock, 
-  Sparkles, 
-  ArrowUpRight, 
-  Grid3X3, 
+import {
+  TrendingUp,
+  ShoppingBag,
+  UtensilsCrossed,
+  Clock,
+  Sparkles,
+  ArrowUpRight,
+  Grid3X3,
   ConciergeBell,
   ChefHat,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AdminOverviewPage: React.FC = () => {
-  const { orders, menuItems, tables, settings } = useRestaurant();
+  const {
+    orders,
+    menuItems,
+    tables,
+    settings,
+    clearDemoOrders
+  } = useRestaurant();
 
   // Metrics calculations
   const totalRevenue = orders.reduce((sum, ord) => sum + ord.total, 0);
@@ -47,6 +54,23 @@ export const AdminOverviewPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (
+                orders.length > 0 &&
+                window.confirm(
+                  'Clear all current demo orders? This will remove them from the order dashboards and reset their linked tables. Menu items, QR codes, and staff will remain.'
+                )
+              ) {
+                clearDemoOrders();
+              }
+            }}
+            disabled={orders.length === 0}
+            className="px-3.5 py-2 rounded-xl border border-red-900/60 bg-red-950/40 hover:bg-red-900/50 disabled:opacity-40 disabled:cursor-not-allowed text-red-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Demo Orders</span>
+          </button>
           <Link
             to="/admin/menu"
             className="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"

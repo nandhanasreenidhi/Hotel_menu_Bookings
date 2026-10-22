@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuItem, SpiceLevel } from '../../../types';
 import { formatINR } from '../../../lib/utils';
 import { DietaryBadge } from '../../../components/common/DietaryBadge';
-import { X, Flame, Clock, Plus, Minus, Sparkles, AlertTriangle } from 'lucide-react';
+import { X, Flame, Clock, Plus, Minus, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FoodDetailModalProps {
@@ -18,11 +18,20 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
   onClose,
   onAdd,
 }) => {
-  if (!item || !isOpen) return null;
-
-  const [spice, setSpice] = useState<SpiceLevel>(item.spiceLevel || 'medium');
+  const [spice, setSpice] = useState<SpiceLevel>('medium');
   const [instructions, setInstructions] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
+
+  // Sync state whenever selected item changes or opens
+  useEffect(() => {
+    if (item && isOpen) {
+      setSpice(item.spiceLevel || 'medium');
+      setInstructions('');
+      setQuantity(1);
+    }
+  }, [item, isOpen]);
+
+  if (!item || !isOpen) return null;
 
   const handleAdd = () => {
     onAdd(item, { spice, instructions, quantity });
