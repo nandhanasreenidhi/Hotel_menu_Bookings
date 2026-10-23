@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
-import { 
-  QrCode, 
-  ConciergeBell, 
-  ChefHat, 
-  ShieldCheck, 
-  RotateCcw, 
-  ChevronDown, 
+import {
+  QrCode,
+  ConciergeBell,
+  ChefHat,
+  ShieldCheck,
+  RotateCcw,
+  ChevronDown,
   ChevronUp,
   Sparkles,
   Layers
@@ -37,6 +37,15 @@ export const DemoBanner: React.FC = () => {
     resetToDefaults();
     setShowResetConfirm(false);
   };
+  // Customers should never see staff or admin controls.
+  const isCustomerRoute =
+    location.pathname === '/menu' ||
+    location.pathname.startsWith('/menu/') ||
+    location.pathname.startsWith('/track');
+
+  if (isCustomerRoute) {
+    return null;
+  }
 
   return (
     <>
@@ -63,10 +72,9 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to={`/menu/${activeTableCode || 'T-04'}`}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${
-                  isActive || location.pathname.startsWith('/track')
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
+                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive || location.pathname.startsWith('/track')
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
               title="Customer Mobile QR Menu"
@@ -79,10 +87,9 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/staff/orders"
               className={({ isActive }) =>
-                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
+                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
               title="Waiter Staff Dashboard"
@@ -100,10 +107,9 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/kitchen"
               className={({ isActive }) =>
-                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${
-                  isActive
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
+                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
               title="Kitchen Display System (KDS)"
@@ -121,10 +127,9 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/admin"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${
-                  isActive
-                    ? 'bg-stone-700 text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
+                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                  ? 'bg-stone-700 text-white shadow-xs'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
               title="Admin Backoffice"

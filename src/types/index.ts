@@ -37,7 +37,7 @@ export interface RestaurantTable {
   activeOrderId?: string;
 }
 
-export type OrderStatus = 
+export type OrderStatus =
   | 'placed'      // Customer just placed, waiting for waiter confirmation
   | 'accepted'    // Waiter accepted, ready to be sent to kitchen
   | 'preparing'   // Kitchen started cooking
@@ -90,6 +90,7 @@ export interface Order {
   rejectionReason?: string;
   createdAt: string; // ISO string
   acceptedAt?: string;
+  sentToKitchenAt?: string;
   preparingAt?: string;
   readyAt?: string;
   servedAt?: string;

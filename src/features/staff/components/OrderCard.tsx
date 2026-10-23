@@ -3,15 +3,15 @@ import { Order } from '../../../types';
 import { formatINR, formatDateTime, formatElapsedDuration } from '../../../lib/utils';
 import { DietaryBadge } from '../../../components/common/DietaryBadge';
 import { StatusBadge, PaymentBadge } from '../../../components/common/StatusBadge';
-import { 
-  Check, 
-  X, 
-  ChefHat, 
-  Send, 
-  Sparkles, 
-  Clock, 
-  Eye, 
-  CheckCircle2, 
+import {
+  Check,
+  X,
+  ChefHat,
+  Send,
+  Sparkles,
+  Clock,
+  Eye,
+  CheckCircle2,
   MessageSquare,
   AlertCircle
 } from 'lucide-react';
@@ -43,11 +43,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${
-        isNew
+      className={`rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${isNew
           ? 'bg-stone-900 border-amber-500/80 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/50'
           : 'bg-stone-900/90 border-stone-800 shadow-sm hover:border-stone-700'
-      }`}
+        }`}
     >
       <div>
         {/* Card Header */}
@@ -163,8 +162,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               </button>
             </>
           )}
-
-          {order.status === 'accepted' && (
+          {order.status === 'accepted' && !order.sentToKitchenAt && (
             <button
               onClick={() => onSendToKitchen(order.id)}
               className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95"
@@ -172,6 +170,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <ChefHat className="w-4 h-4" />
               <span>Send to Kitchen</span>
             </button>
+          )}
+
+          {order.status === 'accepted' && order.sentToKitchenAt && (
+            <div className="px-3 py-2 rounded-xl bg-amber-950/60 border border-amber-800/80 text-amber-300 font-semibold text-xs flex items-center gap-1.5">
+              <ChefHat className="w-3.5 h-3.5" />
+              <span>Sent to Kitchen · Awaiting Chef</span>
+            </div>
           )}
 
           {order.status === 'preparing' && (

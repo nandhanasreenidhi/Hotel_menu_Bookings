@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import { KitchenTicket } from '../components/KitchenTicket';
-import { 
-  ChefHat, 
-  Clock, 
-  Sparkles, 
-  Volume2, 
-  VolumeX, 
-  CheckCircle2, 
+import {
+  ChefHat,
+  Clock,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  CheckCircle2,
   AlertCircle,
   Flame,
   LayoutGrid
@@ -40,7 +40,10 @@ export const KitchenDisplayPage: React.FC = () => {
   // Filter only orders relevant to the kitchen (accepted, preparing, ready)
   const kitchenOrders = useMemo(() => {
     return orders.filter(
-      o => o.status === 'accepted' || o.status === 'preparing' || o.status === 'ready'
+      o =>
+        (o.status === 'accepted' && !!o.sentToKitchenAt) ||
+        o.status === 'preparing' ||
+        o.status === 'ready'
     );
   }, [orders]);
 
@@ -81,11 +84,10 @@ export const KitchenDisplayPage: React.FC = () => {
 
             <button
               onClick={() => setAudioEnabled(!audioEnabled)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                audioEnabled
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${audioEnabled
                   ? 'bg-stone-800 text-stone-200 border-stone-700'
                   : 'bg-stone-900 text-stone-500 border-stone-800'
-              }`}
+                }`}
               title="Kitchen chime sound toggle"
             >
               {audioEnabled ? (

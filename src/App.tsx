@@ -1,3 +1,4 @@
+import LoginPage from './features/auth/pages/LoginPage';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { RestaurantProvider } from './context/RestaurantContext';
@@ -5,6 +6,9 @@ import { DemoBanner } from './components/common/DemoBanner';
 
 // Portal Landing
 import { LandingPortalPage } from './features/portal/LandingPortalPage';
+
+// Login
+
 
 // Customer
 import { MenuPage } from './features/customer/pages/MenuPage';
@@ -30,26 +34,28 @@ export function App() {
   return (
     <RestaurantProvider>
       <BrowserRouter>
-        {/* Universal Top Demo Control Bar with Role Switcher */}
         <DemoBanner />
 
         <Routes>
-          {/* Landing Portal Hub */}
+          {/* Landing Portal */}
           <Route path="/" element={<LandingPortalPage />} />
 
-          {/* Interface 1: Customer QR Ordering & Tracking */}
+          {/* Demo Login */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Customer QR Ordering & Tracking */}
           <Route path="/menu" element={<Navigate to="/menu/T-04" replace />} />
           <Route path="/menu/:tableCode" element={<MenuPage />} />
           <Route path="/track/:orderId" element={<OrderTrackPage />} />
 
-          {/* Interface 2: Waiter / Staff Dispatch */}
+          {/* Waiter / Staff */}
           <Route path="/staff" element={<Navigate to="/staff/orders" replace />} />
           <Route path="/staff/orders" element={<WaiterDashboardPage />} />
 
-          {/* Interface 3: Kitchen Display System (KDS) */}
+          {/* Kitchen Display System */}
           <Route path="/kitchen" element={<KitchenDisplayPage />} />
 
-          {/* Interface 4: Admin Backoffice Suite */}
+          {/* Admin Backoffice */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminOverviewPage />} />
             <Route path="menu" element={<AdminMenuPage />} />

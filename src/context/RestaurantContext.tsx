@@ -64,6 +64,7 @@ interface RestaurantContextType {
   }) => Order | null;
   acceptOrder: (orderId: string, waiterName?: string) => void;
   rejectOrder: (orderId: string, reason: string) => void;
+  sendOrderToKitchen: (orderId: string) => void;
   startPreparingOrder: (orderId: string) => void;
   markOrderReady: (orderId: string) => void;
   markOrderServed: (orderId: string) => void;
@@ -541,6 +542,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
             status: 'accepted',
             acceptedAt: new Date().toISOString(),
             waiterName,
+            sentToKitchenAt: undefined,
           }
           : ord
       )
@@ -561,10 +563,27 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   };
 
+  const sendOrderToKitchen = (orderId: string) => {
+    setOrders(prev =>
+      prev.map(ord =>
+        ord.id === orderId &&
+          ord.status === 'accepted' &&
+          !ord.sentToKitchenAt
+          ? {
+            ...ord,
+            sentToKitchenAt: new Date().toISOString(),
+          }
+          : ord
+      )
+    );
+  };
+
   const startPreparingOrder = (orderId: string) => {
     setOrders(prev =>
       prev.map(ord =>
-        ord.id === orderId
+        ord.id === orderId &&
+          ord.status === 'accepted' &&
+          !!ord.sentToKitchenAt
           ? {
             ...ord,
             status: 'preparing',
@@ -578,7 +597,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   const markOrderReady = (orderId: string) => {
     setOrders(prev =>
       prev.map(ord =>
-        ord.id === orderId
+        ord.id === orderId && ord.status === 'preparing'
           ? {
             ...ord,
             status: 'ready',
@@ -592,7 +611,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   const markOrderServed = (orderId: string) => {
     setOrders(prev =>
       prev.map(ord =>
-        ord.id === orderId
+        ord.id === orderId && ord.status === 'ready'
           ? {
             ...ord,
             status: 'served',
@@ -603,7 +622,11 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     );
   };
 
-  const updatePaymentStatus = (orderId: string, status: PaymentStatus, method?: PaymentMethod) => {
+  const updatePaymentStatus = (
+    orderId: string,
+    status: PaymentStatus,
+    method?: PaymentMethod
+  ) => {
     setOrders(prev =>
       prev.map(ord =>
         ord.id === orderId
@@ -616,6 +639,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       )
     );
   };
+
 
   const getOrderById = (orderId: string) => {
     return orders.find(o => o.id === orderId || o.orderNumber === orderId);
@@ -693,6 +717,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         createOrder,
         acceptOrder,
         rejectOrder,
+        sendOrderToKitchen,
         startPreparingOrder,
         markOrderReady,
         markOrderServed,

@@ -4,13 +4,13 @@ import { Order, OrderStatus } from '../../../types';
 import { OrderCard } from '../components/OrderCard';
 import { RejectReasonModal } from '../components/RejectReasonModal';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
-import { 
-  Search, 
-  ConciergeBell, 
-  Filter, 
-  Clock, 
-  Sparkles, 
-  AlertCircle, 
+import {
+  Search,
+  ConciergeBell,
+  Filter,
+  Clock,
+  Sparkles,
+  AlertCircle,
   CheckCircle2,
   RefreshCw,
   Layers
@@ -23,6 +23,7 @@ export const WaiterDashboardPage: React.FC = () => {
     tables,
     acceptOrder,
     rejectOrder,
+    sendOrderToKitchen,
     startPreparingOrder,
     markOrderServed,
     updatePaymentStatus,
@@ -119,22 +120,20 @@ export const WaiterDashboardPage: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
           <button
             onClick={() => setActiveTab('all')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-              activeTab === 'all'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${activeTab === 'all'
                 ? 'bg-stone-700 text-white shadow-xs'
                 : 'bg-stone-900/80 text-stone-400 hover:bg-stone-800 hover:text-stone-200 border border-stone-800'
-            }`}
+              }`}
           >
             All Tickets ({counts.all})
           </button>
 
           <button
             onClick={() => setActiveTab('placed')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-              activeTab === 'placed'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${activeTab === 'placed'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-stone-900/80 text-amber-400 hover:bg-stone-800 border border-stone-800'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             <span>New Orders ({counts.placed})</span>
@@ -142,33 +141,30 @@ export const WaiterDashboardPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('accepted')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-              activeTab === 'accepted'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${activeTab === 'accepted'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-stone-900/80 text-stone-300 hover:bg-stone-800 border border-stone-800'
-            }`}
+              }`}
           >
             Accepted ({counts.accepted})
           </button>
 
           <button
             onClick={() => setActiveTab('preparing')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-              activeTab === 'preparing'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${activeTab === 'preparing'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-stone-900/80 text-stone-300 hover:bg-stone-800 border border-stone-800'
-            }`}
+              }`}
           >
             In Kitchen ({counts.preparing})
           </button>
 
           <button
             onClick={() => setActiveTab('ready')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-              activeTab === 'ready'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${activeTab === 'ready'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-stone-900/80 text-emerald-400 hover:bg-stone-800 border border-stone-800'
-            }`}
+              }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ready to Serve ({counts.ready})</span>
@@ -176,11 +172,10 @@ export const WaiterDashboardPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('served')}
-            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-              activeTab === 'served'
+            className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${activeTab === 'served'
                 ? 'bg-teal-700 text-white shadow-xs'
                 : 'bg-stone-900/80 text-stone-400 hover:bg-stone-800 border border-stone-800'
-            }`}
+              }`}
           >
             Served ({counts.served})
           </button>
@@ -188,11 +183,10 @@ export const WaiterDashboardPage: React.FC = () => {
           {counts.rejected > 0 && (
             <button
               onClick={() => setActiveTab('rejected')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-                activeTab === 'rejected'
+              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${activeTab === 'rejected'
                   ? 'bg-rose-700 text-white shadow-xs'
                   : 'bg-stone-900/80 text-rose-400 hover:bg-stone-800 border border-stone-800'
-              }`}
+                }`}
             >
               Rejected ({counts.rejected})
             </button>
@@ -251,7 +245,7 @@ export const WaiterDashboardPage: React.FC = () => {
                   order={order}
                   onAccept={acceptOrder}
                   onRejectPrompt={setSelectedOrderForReject}
-                  onSendToKitchen={startPreparingOrder}
+                  onSendToKitchen={sendOrderToKitchen}
                   onMarkServed={markOrderServed}
                   onViewDetails={setSelectedOrderForDetails}
                 />
