@@ -11,14 +11,16 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Layers
+  Layers,
+  Menu,
+  X
 } from 'lucide-react';
 
 export const DemoBanner: React.FC = () => {
   const { orders, resetToDefaults, activeTableCode, setActiveTableCode, tables } = useRestaurant();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
   // Counts for operations badges
@@ -52,7 +54,7 @@ export const DemoBanner: React.FC = () => {
     <>
       {/* Sticky top control dock */}
       <header className="sticky top-0 z-50 w-full bg-[#0B1411] text-stone-200 border-b border-emerald-950/60 shadow-md text-xs select-none no-print">
-        <div className="max-w-7xl mx-auto px-3 py-1.5 flex items-center justify-between gap-3">
+        <div className="relative max-w-7xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
           {/* Logo & Phase Label */}
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-700/80 text-white font-bold tracking-wider text-[11px] shadow-xs">
@@ -68,16 +70,32 @@ export const DemoBanner: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Role Switcher */}
-          <nav className="flex items-center gap-1 sm:gap-2">
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            className="md:hidden inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-stone-100 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="tableflow-primary-navigation"
+            onClick={() => setIsMobileMenuOpen(open => !open)}
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {/* Quick Role Switcher: dropdown on phones, inline on desktop */}
+          <nav
+            id="tableflow-primary-navigation"
+            className={`${isMobileMenuOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-full z-50 flex-col items-stretch gap-1 border-t border-emerald-950 bg-[#0B1411] p-3 shadow-xl md:static md:z-auto md:flex md:flex-row md:items-center md:gap-1 md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
+          >
             <NavLink
               to="/"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                `flex w-full md:w-auto items-center gap-2 px-3 py-2 md:px-2.5 md:py-1 rounded-md font-medium transition-all ${isActive
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
+              onClick={() => setIsMobileMenuOpen(false)}
               title="Main landing page"
             >
               <Home className="w-3.5 h-3.5" />
@@ -86,11 +104,12 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to={`/menu/${activeTableCode || 'T-04'}`}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive || location.pathname.startsWith('/track')
+                `flex w-full md:w-auto items-center gap-2 px-3 py-2 md:px-2.5 md:py-1 rounded-md font-medium transition-all ${isActive || location.pathname.startsWith('/track')
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
+              onClick={() => setIsMobileMenuOpen(false)}
               title="Customer Mobile QR Menu"
             >
               <QrCode className="w-3.5 h-3.5" />
@@ -101,11 +120,12 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/staff/orders"
               className={({ isActive }) =>
-                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                `relative flex w-full md:w-auto items-center gap-2 px-3 py-2 md:px-2.5 md:py-1 rounded-md font-medium transition-all ${isActive
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
+              onClick={() => setIsMobileMenuOpen(false)}
               title="Waiter Staff Dashboard"
             >
               <ConciergeBell className="w-3.5 h-3.5" />
@@ -121,11 +141,12 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/kitchen"
               className={({ isActive }) =>
-                `relative flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                `relative flex w-full md:w-auto items-center gap-2 px-3 py-2 md:px-2.5 md:py-1 rounded-md font-medium transition-all ${isActive
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
+              onClick={() => setIsMobileMenuOpen(false)}
               title="Kitchen Display System (KDS)"
             >
               <ChefHat className="w-3.5 h-3.5" />
@@ -141,11 +162,12 @@ export const DemoBanner: React.FC = () => {
             <NavLink
               to="/admin"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                `flex w-full md:w-auto items-center gap-2 px-3 py-2 md:px-2.5 md:py-1 rounded-md font-medium transition-all ${isActive
                   ? 'bg-stone-700 text-white shadow-xs'
                   : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
                 }`
               }
+              onClick={() => setIsMobileMenuOpen(false)}
               title="Admin Backoffice"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -173,11 +195,12 @@ export const DemoBanner: React.FC = () => {
 
             <button
               onClick={() => setShowResetConfirm(true)}
+              aria-label="Reset demo data"
               className="flex items-center gap-1 px-2 py-1 rounded bg-stone-800/90 hover:bg-stone-700 text-stone-300 hover:text-white text-[11px] transition-colors"
               title="Reset mock orders, cart and menu state"
             >
               <RotateCcw className="w-3 h-3 text-stone-400" />
-              <span className="hidden sm:inline">Reset Demo</span>
+              <span className="hidden md:inline">Reset Demo</span>
             </button>
           </div>
         </div>

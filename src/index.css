@@ -100,3 +100,140 @@ body {
     page-break-after: always;
   }
 }
+
+
+/* ===== TABLEFLOW responsive operations dashboard improvements ===== */
+@media (max-width: 640px) {
+  html, body, #root {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  button, a, input, select, textarea {
+    max-width: 100%;
+  }
+
+  input, select, textarea {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  /* Compact but readable page headings and mobile-safe page gutters */
+  h1 {
+    overflow-wrap: anywhere;
+  }
+
+  /* Staff order dashboard */
+  .min-h-screen.bg-\[\#0C1118\] > header,
+  .min-h-screen.bg-\[\#0C1118\] > div {
+    min-width: 0;
+  }
+
+  .min-h-screen.bg-\[\#0C1118\] h1 {
+    font-size: clamp(1.25rem, 5vw, 1.65rem);
+    line-height: 1.2;
+  }
+
+  .min-h-screen.bg-\[\#0C1118\] .max-w-7xl {
+    max-width: 100%;
+  }
+
+  /* Kitchen header and tickets */
+  .min-h-screen.bg-\[\#090D14\] h1 {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .min-h-screen.bg-\[\#090D14\] .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .min-h-screen.bg-\[\#090D14\] .max-w-7xl {
+    max-width: 100%;
+  }
+
+  /* Admin pages: prevent wide content from stretching the viewport */
+  .min-h-screen.bg-\[\#0A0E17\] {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .min-h-screen.bg-\[\#0A0E17\] main,
+  .min-h-screen.bg-\[\#0A0E17\] section,
+  .min-h-screen.bg-\[\#0A0E17\] .min-w-0 {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .min-h-screen.bg-\[\#0A0E17\] table {
+    min-width: 600px;
+  }
+
+  .min-h-screen.bg-\[\#0A0E17\] :has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Landing page hero, dashboard cards and buttons */
+  .min-h-screen.bg-\[\#FAF8F5\] h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.08;
+    overflow-wrap: normal;
+  }
+
+  .min-h-screen.bg-\[\#FAF8F5\] h2 {
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+    line-height: 1.2;
+  }
+
+  .min-h-screen.bg-\[\#FAF8F5\] .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .min-h-screen.bg-\[\#FAF8F5\] a {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .min-h-screen.bg-\[\#090D14\] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+  }
+
+  .min-h-screen.bg-\[\#FAF8F5\] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Improve touch targets and prevent long operational labels from overflowing */
+@media (max-width: 480px) {
+  .min-h-screen.bg-\[\#0C1118\] button,
+  .min-h-screen.bg-\[\#090D14\] button,
+  .min-h-screen.bg-\[\#0A0E17\] button {
+    min-height: 40px;
+  }
+
+  .min-h-screen.bg-\[\#0C1118\] .overflow-x-auto,
+  .min-h-screen.bg-\[\#090D14\] .overflow-x-auto {
+    scrollbar-width: none;
+  }
+
+  .min-h-screen.bg-\[\#0C1118\] .overflow-x-auto::-webkit-scrollbar,
+  .min-h-screen.bg-\[\#090D14\] .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+
+  .min-h-screen.bg-\[\#0C1118\] .rounded-2xl,
+  .min-h-screen.bg-\[\#090D14\] .rounded-2xl {
+    overflow-wrap: anywhere;
+  }
+}
