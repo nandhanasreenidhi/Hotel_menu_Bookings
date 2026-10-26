@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import { KitchenTicket } from '../components/KitchenTicket';
 import {
@@ -13,11 +13,13 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
+import { playNotificationSound } from '../../../lib/notificationSound';
 
 export const KitchenDisplayPage: React.FC = () => {
   const { orders, startPreparingOrder, markOrderReady } = useRestaurant();
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<string>('');
+  const previousKitchenOrderIds = useRef<Set<string> | null>(null);
 
   // Digital clock update
   useEffect(() => {
@@ -46,6 +48,20 @@ export const KitchenDisplayPage: React.FC = () => {
         o.status === 'ready'
     );
   }, [orders]);
+
+  useEffect(() => {
+    const currentIds = new Set(kitchenOrders.map(order => order.id));
+    // Establish the baseline on first render so opening the kitchen doesn't beep for old tickets.
+    if (previousKitchenOrderIds.current === null) {
+      previousKitchenOrderIds.current = currentIds;
+      return;
+    }
+    const hasNewTicket = kitchenOrders.some(order =>
+      !previousKitchenOrderIds.current?.has(order.id) && !!order.sentToKitchenAt
+    );
+    if (audioEnabled && hasNewTicket) playNotificationSound('kitchen');
+    previousKitchenOrderIds.current = currentIds;
+  }, [kitchenOrders, audioEnabled]);
 
   const queuedOrders = kitchenOrders.filter(o => o.status === 'accepted');
   const preparingOrders = kitchenOrders.filter(o => o.status === 'preparing');

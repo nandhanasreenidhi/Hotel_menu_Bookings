@@ -14,12 +14,15 @@ import {
 import {
   initialCategories,
   initialMenuItems,
+  MENU_SEED_VERSION,
   initialOrders,
   initialSettings,
   initialStaff,
   initialTables,
 } from '../data/initialData';
 import { generateOrderNumber, generateId } from '../lib/utils';
+import { migrateMenuIfNeeded, markMenuSeedApplied } from '../data/menuMigration';
+import { playNotificationSound } from '../lib/notificationSound';
 
 interface RestaurantContextType {
   // Settings
@@ -93,6 +96,7 @@ interface RestaurantContextType {
 }
 
 const STORAGE_KEY = 'TABLEFLOW_DEMO_STATE_V1';
+const MENU_SEED = { version: MENU_SEED_VERSION, categories: initialCategories, menuItems: initialMenuItems };
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
@@ -101,11 +105,22 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   const [settings, setSettings] = useState<RestaurantSettings>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_settings`);
-      return saved ? JSON.parse(saved) : initialSettings;
+      if (!saved) return initialSettings;
+      const parsed = JSON.parse(saved) as RestaurantSettings;
+      // Replace only the old demo brand; preserve any other saved restaurant settings.
+      if (parsed.name === 'THE SAFFRON PAVILION') {
+        parsed.name = 'Dakshin Kitchen';
+        parsed.tagline = 'Authentic South Indian Kitchen';
+      }
+      return parsed;
     } catch {
       return initialSettings;
     }
   });
+
+  // One-time versioned menu/categories migration (no-op until MENU_SEED_VERSION changes).
+  // Must run before the categories/menu initialisers below read localStorage.
+  useState(() => migrateMenuIfNeeded(localStorage, STORAGE_KEY, MENU_SEED));
 
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
@@ -523,6 +538,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     };
 
     setOrders(prev => [newOrder, ...prev]);
+    playNotificationSound('order');
     setTables(prev =>
       prev.map(t =>
         t.id === table.id ? { ...t, status: 'occupied', activeOrderId: orderId } : t
@@ -564,6 +580,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const sendOrderToKitchen = (orderId: string) => {
+    playNotificationSound('kitchen');
     setOrders(prev =>
       prev.map(ord =>
         ord.id === orderId &&
@@ -683,6 +700,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     setSettings(initialSettings);
     setCategories(initialCategories);
     setMenuItems(initialMenuItems);
+    markMenuSeedApplied(localStorage, STORAGE_KEY, MENU_SEED);
     setTables(initialTables);
     setStaff(initialStaff);
     setOrders(initialOrders);

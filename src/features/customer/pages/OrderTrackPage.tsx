@@ -7,14 +7,11 @@ import { StatusBadge, PaymentBadge } from '../../../components/common/StatusBadg
 import { 
   CheckCircle2, 
   Clock, 
-  ChefHat, 
   Sparkles, 
   Bell, 
   ArrowLeft, 
   Receipt, 
-  MapPin, 
-  AlertCircle,
-  HelpCircle
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -27,16 +24,16 @@ export const OrderTrackPage: React.FC = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-stone-200 text-center shadow-lg">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-3" />
-          <h2 className="text-xl font-serif font-bold text-stone-900">Order Not Found</h2>
-          <p className="text-xs text-stone-600 mt-2">
-            We couldn't locate order reference <code>{orderId}</code>. Please check your order ticket or return to the menu.
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-[#E8DCCF] text-center shadow-lg">
+          <AlertCircle className="w-12 h-12 text-[#B95D3F] mx-auto mb-3" />
+          <h2 className="text-xl font-serif font-bold text-[#21140F]">Order Ticket Not Found</h2>
+          <p className="text-xs text-[#7A6961] mt-2 leading-relaxed">
+            We couldn't locate order reference <code className="bg-[#FAF4E9] px-1.5 py-0.5 rounded text-[#21140F] font-mono">{orderId}</code>. Please check your order ticket or return to the menu.
           </p>
           <Link
             to="/menu/T-04"
-            className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#132E22] text-white text-xs font-semibold hover:bg-emerald-900 transition-colors"
+            className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#B95D3F] hover:bg-[#A64B36] text-white text-xs font-bold transition-colors shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Return to Menu</span>
@@ -48,10 +45,10 @@ export const OrderTrackPage: React.FC = () => {
 
   const steps = [
     { key: 'placed', label: 'Order Received', desc: 'Sent to waitstaff for review' },
-    { key: 'accepted', label: 'Waiter Confirmed', desc: 'Approved and queued' },
+    { key: 'accepted', label: 'Waiter Confirmed', desc: 'Approved & queued for kitchen' },
     { key: 'preparing', label: 'In Kitchen', desc: 'Chefs are crafting your dishes' },
     { key: 'ready', label: 'Ready to Serve', desc: 'Plated hot & ready for table' },
-    { key: 'served', label: 'Delivered', desc: 'Enjoy your meal!' },
+    { key: 'served', label: 'Delivered', desc: 'Delivered to your table. Enjoy!' },
   ];
 
   const getStepIndex = (status: string) => {
@@ -74,47 +71,48 @@ export const OrderTrackPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] pb-20 text-stone-900">
-      {/* Top Bar */}
-      <div className="bg-[#132E22] text-white px-4 py-4 border-b border-emerald-950">
+    <div className="min-h-screen bg-[#FDFBF7] pb-24 text-[#21140F]">
+      {/* Top Bar with Deep Espresso */}
+      <div className="bg-[#21140F] text-[#FFF7EB] px-4 py-4 border-b border-[#C69B56]/30 shadow-md">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             to={`/menu/${order.tableCode}`}
-            className="flex items-center gap-1.5 text-xs text-emerald-200 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-[#C69B56] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Add More Dishes</span>
+            <span className="font-semibold">Add More Dishes</span>
           </Link>
-          <span className="text-xs font-semibold tracking-wider text-amber-300">
-            LIVE ORDER TRACKER
-          </span>
+          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-widest text-[#C69B56]">
+            <Sparkles className="w-3.5 h-3.5 text-[#C69B56]" />
+            <span>LIVE ORDER TRACKER</span>
+          </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         {/* Header Card */}
-        <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-3xl p-6 border border-[#E8DCCF] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="text-xs font-mono font-bold text-[#21140F] bg-[#FAF4E9] border border-[#E8DCCF] px-2.5 py-0.5 rounded-md">
                 {order.orderNumber}
               </span>
               <StatusBadge status={order.status} />
               <PaymentBadge status={order.paymentStatus} />
             </div>
-            <h1 className="text-2xl font-serif font-bold text-stone-900">
+            <h1 className="text-2xl font-serif font-bold text-[#21140F]">
               Table {order.tableNumber} Dining Ticket
             </h1>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-xs text-[#7A6961] mt-1 font-light">
               Placed at {formatDateTime(order.createdAt)} ({formatElapsedDuration(order.createdAt)})
             </p>
           </div>
 
           <button
             onClick={handleCallWaiter}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 border border-stone-200 transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-full bg-[#FAF6F0] hover:bg-[#FAF4E9] text-[#21140F] text-xs font-semibold flex items-center justify-center gap-2 border border-[#E8DCCF] transition-all cursor-pointer shadow-2xs"
           >
-            <Bell className="w-4 h-4 text-amber-600" />
+            <Bell className="w-4 h-4 text-[#B95D3F]" />
             <span>Call Waiter to Table</span>
           </button>
         </div>
@@ -124,11 +122,11 @@ export const OrderTrackPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2.5 shadow-sm"
+            className="p-3.5 rounded-2xl bg-[#FAF4E9] border border-[#C69B56]/50 text-[#21140F] text-xs flex items-center gap-2.5 shadow-sm"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#B95D3F] shrink-0" />
             <span>
-              Host & Table staff notified! A waiter is coming over to <strong>Table {order.tableNumber}</strong>.
+              Table staff notified! A waiter is coming over to <strong>Table {order.tableNumber}</strong>.
             </span>
           </motion.div>
         )}
@@ -151,18 +149,18 @@ export const OrderTrackPage: React.FC = () => {
 
         {/* Live Timeline Tracker */}
         {!isRejected && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-serif font-bold text-stone-900 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-700" />
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E8DCCF] shadow-sm">
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#FAF4E9]">
+              <h2 className="text-base font-serif font-bold text-[#21140F] flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#C69B56]" />
                 Live Preparation Status
               </h2>
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-semibold text-[#21140F] bg-[#FAF4E9] px-3 py-1 rounded-full border border-[#E8DCCF]">
                 Est. ~{settings.estimatedPrepTimeMinutes} mins
               </span>
             </div>
 
-            <div className="relative pl-6 sm:pl-8 space-y-7 before:absolute before:left-2.5 sm:before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-stone-200">
+            <div className="relative pl-6 sm:pl-8 space-y-7 before:absolute before:left-2.5 sm:before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#E8DCCF]">
               {steps.map((st, idx) => {
                 const isPassed = currentStep > idx;
                 const isCurrent = currentStep === idx;
@@ -173,10 +171,10 @@ export const OrderTrackPage: React.FC = () => {
                     <div
                       className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                         isPassed
-                          ? 'bg-emerald-700 text-white shadow-xs'
+                          ? 'bg-[#B95D3F] text-white shadow-xs'
                           : isCurrent
-                          ? 'bg-amber-500 text-stone-950 ring-4 ring-amber-100 shadow-sm animate-pulse'
-                          : 'bg-stone-100 text-stone-400 border border-stone-300'
+                          ? 'bg-[#C69B56] text-[#21140F] ring-4 ring-[#FAF4E9] shadow-sm animate-pulse'
+                          : 'bg-[#FAF6F0] text-[#A89890] border border-[#E8DCCF]'
                       }`}
                     >
                       {isPassed ? (
@@ -191,15 +189,15 @@ export const OrderTrackPage: React.FC = () => {
                       <h4
                         className={`text-sm font-bold ${
                           isCurrent
-                            ? 'text-emerald-950'
+                            ? 'text-[#21140F]'
                             : isPassed
-                            ? 'text-stone-800'
-                            : 'text-stone-400'
+                            ? 'text-[#21140F]'
+                            : 'text-[#A89890]'
                         }`}
                       >
                         {st.label}
                       </h4>
-                      <p className="text-xs text-stone-500 mt-0.5">{st.desc}</p>
+                      <p className="text-xs text-[#7A6961] mt-0.5 font-light">{st.desc}</p>
                     </div>
                   </div>
                 );
@@ -209,35 +207,35 @@ export const OrderTrackPage: React.FC = () => {
         )}
 
         {/* Order Items & Bill Details */}
-        <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4">
-          <h3 className="text-base font-serif font-bold text-stone-900 flex items-center gap-2 border-b border-stone-100 pb-3">
-            <Receipt className="w-4 h-4 text-emerald-700" />
+        <div className="bg-white rounded-3xl p-6 border border-[#E8DCCF] shadow-sm space-y-4">
+          <h3 className="text-base font-serif font-bold text-[#21140F] flex items-center gap-2 border-b border-[#FAF4E9] pb-3">
+            <Receipt className="w-4 h-4 text-[#C69B56]" />
             Ordered Items ({order.items.reduce((s, i) => s + i.quantity, 0)})
           </h3>
 
-          <div className="divide-y divide-stone-100">
+          <div className="divide-y divide-[#FAF4E9]">
             {order.items.map(item => (
               <div key={item.id} className="py-3 flex items-start justify-between gap-3 text-xs">
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <DietaryBadge type={item.dietary} />
-                    <span className="font-bold text-stone-900">
+                    <span className="font-bold text-[#21140F]">
                       {item.quantity} × {item.name}
                     </span>
                   </div>
                   {item.spiceLevel && (
-                    <span className="text-[11px] text-amber-700 capitalize block mt-0.5 ml-5">
+                    <span className="text-[11px] text-[#B95D3F] capitalize block mt-0.5 ml-6">
                       {item.spiceLevel} spice
                     </span>
                   )}
                   {item.specialInstructions && (
-                    <span className="text-[11px] text-stone-500 italic block mt-0.5 ml-5">
+                    <span className="text-[11px] text-[#7A6961] italic block mt-0.5 ml-6">
                       "{item.specialInstructions}"
                     </span>
                   )}
                 </div>
 
-                <span className="font-serif font-bold text-stone-800 shrink-0">
+                <span className="font-serif font-bold text-[#21140F] shrink-0">
                   {formatINR(item.price * item.quantity)}
                 </span>
               </div>
@@ -245,10 +243,10 @@ export const OrderTrackPage: React.FC = () => {
           </div>
 
           {/* Pricing Totals */}
-          <div className="border-t border-stone-200 pt-3 space-y-1.5 text-xs text-stone-600">
+          <div className="border-t border-[#E8DCCF] pt-3.5 space-y-1.5 text-xs text-[#7A6961]">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="font-semibold text-stone-800">{formatINR(order.subtotal)}</span>
+              <span className="font-semibold text-[#21140F]">{formatINR(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>Taxes & GST</span>
@@ -260,9 +258,9 @@ export const OrderTrackPage: React.FC = () => {
                 <span>{formatINR(order.serviceCharge)}</span>
               </div>
             )}
-            <div className="border-t border-stone-200 pt-2 flex justify-between items-baseline font-bold text-base text-stone-950">
+            <div className="border-t border-[#E8DCCF] pt-2.5 flex justify-between items-baseline font-bold text-base text-[#21140F]">
               <span className="font-serif">Total Bill</span>
-              <span className="font-serif text-lg text-emerald-950">{formatINR(order.total)}</span>
+              <span className="font-serif text-lg text-[#21140F]">{formatINR(order.total)}</span>
             </div>
           </div>
         </div>

@@ -1,58 +1,76 @@
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Category } from '../../../types';
 
 interface CategoryTabsProps {
   categories: Category[];
   activeCategoryId: string;
   onSelectCategory: (id: string) => void;
-  itemCountsByCategory: Record<string, number>;
+  itemCountsByCategory?: Record<string, number>;
+  isVegOnly?: boolean;
+  onToggleVeg?: () => void;
 }
 
+/** Sticky category chips with the sliding terracotta indicator and the "Veg only" switch. */
 export const CategoryTabs: React.FC<CategoryTabsProps> = ({
   categories,
   activeCategoryId,
   onSelectCategory,
-  itemCountsByCategory,
+  isVegOnly = false,
+  onToggleVeg,
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const indRef = useRef<HTMLSpanElement>(null);
+
+  const position = () => {
+    const wrap = chipsRef.current;
+    const ind = indRef.current;
+    if (!wrap || !ind) return;
+    const active = wrap.querySelector<HTMLElement>('.chip.on');
+    if (!active) {
+      ind.style.width = '0px';
+      return;
+    }
+    ind.style.left = `${active.offsetLeft}px`;
+    ind.style.width = `${active.offsetWidth}px`;
+  };
+
+  useLayoutEffect(() => {
+    position();
+    const wrap = chipsRef.current;
+    const active = wrap?.querySelector<HTMLElement>('.chip.on');
+    // Scroll the chip row only (never the page) so the active chip stays visible.
+    if (wrap && active) wrap.scrollTo({ left: Math.max(0, active.offsetLeft - 20), behavior: 'smooth' });
+  }, [activeCategoryId, categories]);
+
+  useLayoutEffect(() => {
+    const onResize = () => position();
+    window.addEventListener('resize', onResize);
+    document.fonts?.ready.then(position).catch(() => undefined);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
-    <div className="sticky top-[41px] z-30 bg-[#FAF8F5]/95 backdrop-blur-md py-3 border-b border-stone-200/80 shadow-xs">
-      <div
-        ref={scrollRef}
-        className="flex items-center gap-2 overflow-x-auto px-4 max-w-4xl mx-auto scrollbar-none scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {categories.map(cat => {
-          const isActive = cat.id === activeCategoryId;
-          const count = cat.id === 'cat-all' 
-            ? Object.values(itemCountsByCategory).reduce((a, b) => a + b, 0)
-            : itemCountsByCategory[cat.id] || 0;
-
-          return (
-            <button
-              key={cat.id}
-              onClick={() => onSelectCategory(cat.id)}
-              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 ${
-                isActive
-                  ? 'bg-[#132E22] text-[#FAF8F5] shadow-md shadow-emerald-950/20 scale-[1.02]'
-                  : 'bg-white text-stone-600 border border-stone-200/90 hover:bg-stone-100 hover:text-stone-900'
-              }`}
-            >
-              <span>{cat.name}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isActive
-                    ? 'bg-emerald-800 text-emerald-100'
-                    : 'bg-stone-100 text-stone-500'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+    <nav className="catnav" aria-label="Menu categories">
+      <div className="wrap chips" id="chips" ref={chipsRef}>
+        <span className="ind" id="ind" ref={indRef} />
+        {categories.map(cat => (
+          <button
+            key={cat.id}
+            type="button"
+            className={`chip${cat.id === activeCategoryId ? ' on' : ''}`}
+            aria-current={cat.id === activeCategoryId ? 'true' : undefined}
+            onClick={() => onSelectCategory(cat.id)}
+          >
+            {cat.name}
+          </button>
+        ))}
+        {onToggleVeg && (
+          <label className="vegt">
+            <input type="checkbox" checked={isVegOnly} onChange={onToggleVeg} />
+            <span>Veg only</span>
+          </label>
+        )}
       </div>
-    </div>
+    </nav>
   );
 };

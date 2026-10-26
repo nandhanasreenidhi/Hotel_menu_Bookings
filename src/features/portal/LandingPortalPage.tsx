@@ -65,15 +65,19 @@ export const LandingPortalPage: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-5xl mx-auto text-center space-y-5">
+          <div className="mb-2 text-emerald-100/80 text-xs sm:text-sm font-semibold uppercase tracking-[0.28em]">
+            Welcome to
+          </div>
+          <p className="text-amber-300 text-2xl sm:text-3xl md:text-4xl font-serif font-bold tracking-tight">
+            Dakshin Kitchen
+          </p>
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-amber-300 border border-white/10 text-xs font-semibold tracking-wide">
             <Sparkles className="w-4 h-4" />
             <span>TABLEFLOW • Restaurant Operations</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-black tracking-tight text-[#FAF8F5] leading-tight">
-            One Platform.
-            <br />
-            Three Powerful Workspaces.
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-tight text-[#FAF8F5] leading-[1.12] max-w-4xl mx-auto">
+            One Platform. Three Powerful Workspaces.
           </h1>
 
           <p className="max-w-2xl mx-auto text-stone-300 text-sm sm:text-base font-light leading-relaxed">
@@ -106,13 +110,13 @@ export const LandingPortalPage: React.FC = () => {
       {/* Three Staff Portals */}
       <main
         id="staff-portals"
-        className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 mb-12 w-full"
+        className="max-w-7xl mx-auto px-4 sm:px-8 pt-10 pb-12 mb-0 w-full"
       >
         <div className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-800">
             Staff Workspace
           </p>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-serif font-bold text-stone-900">
+          <h2 className="mt-2 text-xl sm:text-2xl font-serif font-bold text-stone-900">
             Choose Your Dashboard
           </h2>
           <p className="mt-2 text-sm text-stone-600">
@@ -120,16 +124,16 @@ export const LandingPortalPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6 items-stretch">
           {interfaces.map(card => {
             const Icon = card.icon;
 
             return (
               <section
                 key={card.title}
-                className="rounded-3xl bg-white border border-stone-200/90 shadow-xl overflow-hidden flex flex-col justify-between hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                className="rounded-2xl bg-white border border-stone-200/90 shadow-md overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                <div className={`p-6 bg-gradient-to-br ${card.color} text-white flex-1`}>
+                <div className={`p-5 sm:p-6 bg-gradient-to-br ${card.color} text-white flex-1`}>
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white">
                       <Icon className="w-6 h-6" />
@@ -140,19 +144,19 @@ export const LandingPortalPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-serif font-bold tracking-tight mb-3">
+                  <h3 className="text-lg sm:text-xl font-serif font-bold tracking-tight mb-2.5">
                     {card.title}
                   </h3>
 
-                  <p className="text-sm text-stone-300 leading-relaxed font-light">
+                  <p className="text-[13px] sm:text-sm text-stone-300 leading-relaxed">
                     {card.desc}
                   </p>
                 </div>
 
-                <div className="p-5 bg-white border-t border-stone-100">
+                <div className="p-4 bg-white border-t border-stone-100">
                   <Link
                     to={card.route}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#132E22] hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm shadow-sm transition-colors active:scale-[0.98]"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#132E22] hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm shadow-sm transition-colors active:scale-[0.98]"
                   >
                     <span>{card.actionText}</span>
                     <ArrowRight className="w-4 h-4" />
@@ -201,7 +205,7 @@ export const LandingPortalPage: React.FC = () => {
             </span>
 
             <span className="font-bold text-white tracking-wider">
-              TABLEFLOW
+              Dakshin Kitchen · TABLEFLOW
             </span>
 
             <span>• Phase 1 Frontend Preview</span>

@@ -2,29 +2,53 @@
 
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --font-serif: 'Playfair Display', Georgia, serif;
-    --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    --font-sans: 'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Fraunces', 'Playfair Display', Georgia, serif;
+    --font-cursive: 'Caveat', cursive, Georgia, serif;
+    --font-display: 'Fraunces', 'Outfit', sans-serif;
     
-    /* Warm Ivory & Cream Customer Palette */
-    --color-cream-50: #FAF8F5;
-    --color-cream-100: #F5EFEB;
-    --color-cream-200: #EFE8E0;
-    --color-cream-300: #E3D9CC;
-    --color-cream-400: #D4C6B3;
-    
-    /* Deep Forest Green */
-    --color-forest-950: #0B1C15;
-    --color-forest-900: #132E22;
-    --color-forest-800: #1B4030;
-    --color-forest-700: #235540;
-    --color-forest-600: #2D6A50;
-    
-    /* Luxury Gold / Brass */
-    --color-gold-400: #DFC196;
-    --color-gold-500: #C5A880;
-    --color-gold-600: #AB8E66;
-    --color-gold-700: #8E7450;
+    /* TABLEFLOW Premium South Indian / Dakshin Palette */
+    --color-dakshin-espresso: #21140F;
+    --color-dakshin-cream: #FFF7EB;
+    --color-dakshin-leaf: #284B36;
+    --color-dakshin-gold: #C69B56;
+    --color-dakshin-terra: #B95D3F;
+
+    --color-cream-base: #F7F0E5;
+    --color-cream-surface: #FAF6F0;
+    --color-cream-card: #FFFFFF;
+    --color-cream-border: #E8DCCF;
+    --color-cream-dark: #ECE0D1;
+
+    --color-espresso: #21140F;
+    --color-espresso-deep: #180D09;
+    --color-espresso-light: #362219;
+    --color-espresso-subtle: #4D3328;
+
+    --color-terracotta: #B95D3F;
+    --color-terracotta-dark: #96472D;
+    --color-terracotta-light: #D27454;
+    --color-terracotta-soft: #FBF0EB;
+
+    --color-gold: #C69B56;
+    --color-gold-dark: #A37C3A;
+    --color-gold-light: #E0BA79;
+    --color-gold-soft: #FBF4E8;
+
+    --color-leaf: #284B36;
+    --color-leaf-dark: #1B3525;
+    --color-leaf-light: #3A694D;
+
+    --color-neutral-text: #261613;
+    --color-neutral-muted: #7A6961;
+    --color-neutral-subtle: #A89890;
+
+    /* Legacy compatibility */
+    --color-cream-50: #FAF6F0;
+    --color-cream-100: #F7F0E5;
+    --color-cream-200: #ECE0D1;
+    --color-cream-300: #E0CEBB;
+    --color-cream-400: #CEB69E;
     
     /* Operations Slate / Charcoal */
     --color-ops-950: #090D14;
@@ -39,8 +63,8 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-cream-50);
-  color: #1F2421;
+  background-color: var(--color-cream-base);
+  color: var(--color-neutral-text);
   -webkit-font-smoothing: antialiased;
 }
 

@@ -1,17 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRestaurant } from '../../../context/RestaurantContext';
-import { MenuItem } from '../../../types';
+import { Category, MenuItem } from '../../../types';
 import { formatINR } from '../../../lib/utils';
 import { MenuHeader } from '../components/MenuHeader';
+import { FeaturedCarousel } from '../components/FeaturedCarousel';
 import { CategoryTabs } from '../components/CategoryTabs';
-import { FoodCard } from '../components/FoodCard';
+import { MenuSection } from '../components/MenuSection';
 import { FoodDetailModal } from '../components/FoodDetailModal';
 import { CartDrawer } from '../components/CartDrawer';
 import { CheckoutModal } from '../components/CheckoutModal';
-import { Search, ShoppingBag, Filter, Sparkles, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { FilterCoffeeBanner } from '../components/FilterCoffeeBanner';
+import { Search, Sparkles } from 'lucide-react';
+import { useInView } from '../hooks/useInView';
+import { burst, flyToCart, prefersReducedMotion } from '../utils/dakshinFx';
+import '../styles/dakshin.css';
 
+interface ToastState {
+  message: React.ReactNode;
+  undoItemId?: string;
+}
+
+/** Dakshin Kitchen customer menu. All data, cart, table and order handling comes from RestaurantContext. */
 export const MenuPage: React.FC = () => {
   const { tableCode = 'T-04' } = useParams<{ tableCode: string }>();
   const {
@@ -24,68 +34,168 @@ export const MenuPage: React.FC = () => {
     updateCartQuantity,
     getTableByCode,
     setActiveTableCode,
+    settings,
   } = useRestaurant();
 
-  const [activeCategoryId, setActiveCategoryId] = useState<string>('cat-all');
+  const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dietaryFilter, setDietaryFilter] = useState<'all' | 'veg' | 'special'>('all');
   const [selectedItemForModal, setSelectedItemForModal] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
-  const [cartBounce, setCartBounce] = useState<boolean>(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [toastVisible, setToastVisible] = useState<boolean>(false);
 
-  // Sync active table code to context
+  const rootRef = useRef<HTMLDivElement>(null);
+  const progRef = useRef<HTMLDivElement>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [storyRef, storySeen] = useInView<HTMLElement>(0.2);
+
+  // Sync active table code to context (unchanged behaviour)
   useEffect(() => {
-    if (tableCode) {
-      setActiveTableCode(tableCode);
-    }
+    if (tableCode) setActiveTableCode(tableCode);
   }, [tableCode, setActiveTableCode]);
 
   const currentTable = getTableByCode(tableCode);
 
-  // Calculate item counts per category for the tab pills
-  const itemCountsByCategory = useMemo(() => {
-    const counts: Record<string, number> = {};
-    categories.forEach(cat => {
-      if (cat.id === 'cat-all') {
-        counts[cat.id] = menuItems.length;
-      } else {
-        counts[cat.id] = menuItems.filter(item => item.category === cat.id).length;
-      }
-    });
-    return counts;
-  }, [categories, menuItems]);
+  // Page-level chrome the standalone design put on <html>/<body>; restored on leave.
+  useEffect(() => {
+    const html = document.documentElement;
+    const prevPad = html.style.scrollPaddingTop;
+    const prevBg = document.body.style.backgroundColor;
+    html.style.scrollPaddingTop = 'calc(env(safe-area-inset-top, 0px) + 120px)';
+    document.body.style.backgroundColor = '#21150F';
+    return () => {
+      html.style.scrollPaddingTop = prevPad;
+      document.body.style.backgroundColor = prevBg;
+    };
+  }, []);
 
-  // Filtered menu items
-  const filteredItems = useMemo(() => {
-    return menuItems.filter(item => {
-      // Category filter
-      if (activeCategoryId !== 'cat-all' && item.category !== activeCategoryId) {
-        return false;
-      }
-      // Search filter
+  // Scroll progress bar + gentle parallax on the signature cards
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        if (progRef.current) progRef.current.style.transform = `scaleX(${h > 0 ? y / h : 0})`;
+        if (prefersReducedMotion()) return;
+        rootRef.current?.style.setProperty('--sy', String(Math.min(y, 900)));
+        const vh = window.innerHeight;
+        document.querySelectorAll<HTMLElement>('.dk .sec:not(.L7) .card.f .im').forEach(el => {
+          const r = el.getBoundingClientRect();
+          if (r.bottom < -60 || r.top > vh + 60) return;
+          el.style.translate = `0 ${((r.top + r.height / 2 - vh / 2) * -0.05).toFixed(1)}px`;
+        });
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Chef's favourites (chef specials; fall back to the first few dishes)
+  const featuredDishes = useMemo(() => {
+    const specials = menuItems.filter(item => item.isChefSpecial && item.isAvailable);
+    if (specials.length >= 3) return specials;
+    return menuItems.slice(0, 5);
+  }, [menuItems]);
+
+  // Total quantity per dish across all cart lines
+  const cartQtyById = useMemo(() => {
+    const out: Record<string, number> = {};
+    cart.forEach(ci => {
+      out[ci.menuItem.id] = (out[ci.menuItem.id] ?? 0) + ci.quantity;
+    });
+    return out;
+  }, [cart]);
+
+  const matchesFilters = useCallback(
+    (item: MenuItem) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = item.name.toLowerCase().includes(q);
-        const matchDesc = item.description.toLowerCase().includes(q);
-        if (!matchName && !matchDesc) return false;
+        if (!item.name.toLowerCase().includes(q) && !item.description.toLowerCase().includes(q)) return false;
       }
-      // Dietary filter
-      if (dietaryFilter === 'veg' && item.dietary !== 'veg' && item.dietary !== 'vegan') {
-        return false;
-      }
-      if (dietaryFilter === 'special' && !item.isChefSpecial) {
-        return false;
-      }
+      if (dietaryFilter === 'veg' && item.dietary !== 'veg' && item.dietary !== 'vegan') return false;
+      if (dietaryFilter === 'special' && !item.isChefSpecial) return false;
       return true;
-    });
-  }, [menuItems, activeCategoryId, searchQuery, dietaryFilter]);
+    },
+    [searchQuery, dietaryFilter]
+  );
 
-  // Trigger bounce animation when cart changes
-  const handleAddToCart = (item: MenuItem) => {
+  // One section per category (in sortOrder), plus a catch-all so no dish can ever disappear.
+  const sections = useMemo(() => {
+    const real = categories.filter(c => c.id !== 'cat-all').sort((a, b) => a.sortOrder - b.sortOrder);
+    const known = new Set(real.map(c => c.id));
+    const orphans = menuItems.filter(i => !known.has(i.category));
+    const cats: Category[] = [...real];
+    if (orphans.length) cats.push({ id: 'cat-other', name: 'More from the Kitchen', sortOrder: 999 });
+    return cats
+      .map(cat => {
+        const all = cat.id === 'cat-other' ? orphans : menuItems.filter(i => i.category === cat.id);
+        return { cat, all, items: all.filter(matchesFilters) };
+      })
+      .filter(s => s.items.length > 0);
+  }, [categories, menuItems, matchesFilters]);
+
+  const visibleDishCount = sections.reduce((n, s) => n + s.items.length, 0);
+  const sectionKey = sections.map(s => s.cat.id).join('|');
+  const currentActiveId = sections.some(s => s.cat.id === activeCategoryId)
+    ? activeCategoryId
+    : sections[0]?.cat.id ?? '';
+
+  // Scroll-spy: highlight the chip of the section under the reading line
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => e.isIntersecting && setActiveCategoryId(e.target.id)),
+      { rootMargin: '-35% 0px -60% 0px' }
+    );
+    sectionKey.split('|').filter(Boolean).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+    return () => io.disconnect();
+  }, [sectionKey]);
+
+  const scrollToSection = (id: string) => {
+    setActiveCategoryId(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  };
+  const scrollToCatalogue = () => {
+    const first = sections[0]?.cat.id;
+    if (first) scrollToSection(first);
+  };
+  const scrollToFavourites = () => {
+    document.getElementById('favs')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  };
+
+  const showToast = (state: ToastState) => {
+    setToast(state);
+    setToastVisible(true);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastVisible(false), 2800);
+  };
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Add one dish straight from a card / favourites tile
+  const handleAddToCart = (item: MenuItem, sourceEl?: HTMLElement) => {
     addToCart(item);
-    setCartBounce(true);
-    setTimeout(() => setCartBounce(false), 400);
+    if (sourceEl) {
+      burst(sourceEl);
+      flyToCart(sourceEl.getBoundingClientRect());
+    }
+    showToast({
+      message: (
+        <span>
+          ✓ <b>{item.name}</b> added · {(cartQtyById[item.id] ?? 0) + 1} in order
+        </span>
+      ),
+      undoItemId: item.id,
+    });
   };
 
   const handleModalAdd = (
@@ -95,184 +205,196 @@ export const MenuPage: React.FC = () => {
     for (let i = 0; i < options.quantity; i++) {
       addToCart(item, { spice: options.spice, instructions: options.instructions });
     }
-    setCartBounce(true);
-    setTimeout(() => setCartBounce(false), 400);
+    showToast({
+      message: (
+        <span>
+          ✓ Added {options.quantity} × <b>{item.name}</b>
+        </span>
+      ),
+    });
   };
 
+  const resetFilters = () => {
+    setSearchQuery('');
+    setDietaryFilter('all');
+  };
+
+  const orderBarVisible = cartCount > 0 && !isCartOpen && !isCheckoutOpen;
+
   return (
-    <div className="min-h-screen bg-[#FAF8F5] pb-28 text-stone-900">
-      {/* Restaurant Header */}
-      <MenuHeader table={currentTable} tableCode={tableCode} />
+    <>
+      <div className="dk" ref={rootRef}>
+        <div id="prog" ref={progRef} />
 
-      {/* Sticky Category Tabs */}
-      <CategoryTabs
-        categories={categories}
-        activeCategoryId={activeCategoryId}
-        onSelectCategory={setActiveCategoryId}
-        itemCountsByCategory={itemCountsByCategory}
-      />
+        <MenuHeader
+          table={currentTable}
+          tableCode={tableCode}
+          onExploreClick={scrollToCatalogue}
+          onFavoritesClick={scrollToFavourites}
+          cartCount={cartCount}
+          cartTotal={cartTotal}
+          onCartClick={() => setIsCartOpen(true)}
+        />
 
-      {/* Search & Dietary Filters Container */}
-      <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
-        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search tandoor, biryani, curries, mocktails..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-stone-200/90 text-xs text-stone-800 placeholder-stone-400 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-800 focus:bg-white transition-all"
-            />
-            {searchQuery && (
+        <main>
+          <CategoryTabs
+            categories={sections.map(s => s.cat)}
+            activeCategoryId={currentActiveId}
+            onSelectCategory={scrollToSection}
+            isVegOnly={dietaryFilter === 'veg'}
+            onToggleVeg={() => setDietaryFilter(dietaryFilter === 'veg' ? 'all' : 'veg')}
+          />
+
+          <div className="wrap" id="menu">
+            <div className="legend">
+              <span>
+                <i className="dot v" />
+                Veg
+              </span>
+              <span>
+                <i className="dot n" />
+                Non-veg
+              </span>
+              <span>
+                Tap <b>+ Add</b> to start your order
+              </span>
+              <span>Prices in ₹</span>
+            </div>
+
+            <div className="wrap srch">
+              <div className="sbox">
+                <Search size={16} aria-hidden />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search dosa, idli, biryani, filter coffee…"
+                  aria-label="Search the menu"
+                />
+                {searchQuery && (
+                  <button type="button" className="clr" onClick={() => setSearchQuery('')}>
+                    Clear
+                  </button>
+                )}
+              </div>
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-xs text-stone-400 hover:text-stone-700"
+                type="button"
+                className={`fchip${dietaryFilter === 'special' ? ' on' : ''}`}
+                aria-pressed={dietaryFilter === 'special'}
+                onClick={() => setDietaryFilter(dietaryFilter === 'special' ? 'all' : 'special')}
               >
-                Clear
+                <Sparkles size={15} aria-hidden />
+                Chef’s choice
               </button>
-            )}
-          </div>
+              <span className="cnt2" aria-live="polite">
+                {visibleDishCount} {visibleDishCount === 1 ? 'dish' : 'dishes'}
+              </span>
+            </div>
 
-          {/* Quick Dietary Filters */}
-          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-            <button
-              onClick={() => setDietaryFilter('all')}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-                dietaryFilter === 'all'
-                  ? 'bg-stone-800 text-white shadow-xs'
-                  : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setDietaryFilter(dietaryFilter === 'veg' ? 'all' : 'veg')}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                dietaryFilter === 'veg'
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-600" />
-              <span>Veg Only</span>
-            </button>
-            <button
-              onClick={() => setDietaryFilter(dietaryFilter === 'special' ? 'all' : 'special')}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center gap-1 ${
-                dietaryFilter === 'special'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-white text-amber-800 border border-amber-200 hover:bg-amber-50'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Chef's Choice</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Current Category Title & Count */}
-        <div className="mt-5 flex items-baseline justify-between border-b border-stone-200/60 pb-2">
-          <h2 className="text-xl font-serif font-bold text-stone-900">
-            {categories.find(c => c.id === activeCategoryId)?.name || 'Culinary Selection'}
-          </h2>
-          <span className="text-xs text-stone-500 font-medium">
-            {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'} available
-          </span>
-        </div>
-      </div>
-
-      {/* Menu Cards Grid */}
-      <main className="max-w-4xl mx-auto px-4 mt-4">
-        {filteredItems.length === 0 ? (
-          <div className="py-16 text-center text-stone-500 bg-white rounded-3xl border border-stone-200/80 p-8 shadow-xs">
-            <AlertCircle className="w-10 h-10 text-stone-300 mx-auto mb-2" />
-            <h3 className="text-base font-serif font-bold text-stone-800">
-              No matching dishes found
-            </h3>
-            <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1">
-              Try adjusting your search terms or dietary filter to explore other handcrafted delicacies.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setActiveCategoryId('cat-all');
-                setDietaryFilter('all');
-              }}
-              className="mt-4 px-4 py-2 rounded-full bg-emerald-900 text-white text-xs font-semibold hover:bg-emerald-800 transition-colors"
-            >
-              Reset Filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            {filteredItems.map(item => {
-              const inCartItem = cart.find(ci => ci.menuItem.id === item.id);
-              const qty = inCartItem ? inCartItem.quantity : 0;
-
-              return (
-                <FoodCard
-                  key={item.id}
-                  item={item}
+            {sections.length === 0 ? (
+              <div className="nores">
+                <h3>No dishes found</h3>
+                <p>Try a different search or clear the filters to see the whole menu.</p>
+                <button type="button" className="btn" onClick={resetFilters}>
+                  Reset filters
+                </button>
+              </div>
+            ) : (
+              sections.map((s, i) => (
+                <MenuSection
+                  key={s.cat.id}
+                  category={s.cat}
+                  index={i}
+                  items={s.items}
+                  allItems={s.all}
+                  cartQtyById={cartQtyById}
                   onOpenDetails={setSelectedItemForModal}
                   onAddToCart={handleAddToCart}
                   onUpdateQuantity={updateCartQuantity}
-                  cartQuantity={qty}
                 />
-              );
-            })}
+              ))
+            )}
           </div>
-        )}
-      </main>
 
-      {/* Floating Bottom Cart Bar (Mobile-first, always accessible) */}
-      <AnimatePresence>
-        {cartCount > 0 && (
-          <div className="fixed bottom-3 inset-x-0 z-40 px-4 max-w-md mx-auto pointer-events-none">
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="pointer-events-auto"
-            >
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#132E22] hover:bg-emerald-950 text-white shadow-2xl shadow-emerald-950/40 flex items-center justify-between transition-transform duration-200 active:scale-[0.98] border border-emerald-700/40 cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    animate={cartBounce ? { scale: [1, 1.3, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                    className="relative w-8 h-8 rounded-full bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center shadow-sm"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-stone-950 text-amber-300 text-[10px] flex items-center justify-center border border-amber-400 font-mono">
-                      {cartCount}
-                    </span>
-                  </motion.div>
-                  <div className="text-left">
-                    <span className="block text-[11px] text-emerald-300 font-medium">
-                      Table {tableCode} Order
-                    </span>
-                    <span className="text-sm font-serif font-bold text-white">
-                      {formatINR(cartTotal)}
-                    </span>
-                  </div>
-                </div>
+          <FeaturedCarousel
+            featuredItems={featuredDishes}
+            onAddToCart={handleAddToCart}
+            onOpenDetails={setSelectedItemForModal}
+            cart={cart}
+            onUpdateQuantity={updateCartQuantity}
+          />
 
-                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase text-amber-300">
-                  <span>View Cart</span>
-                  <span className="text-base">→</span>
-                </div>
-              </button>
-            </motion.div>
+          <FilterCoffeeBanner
+            onAddSpecialBeverage={() => showToast({ message: <span>✓ <b>Filter Coffee</b> added to your order</span> })}
+          />
+
+          <section ref={storyRef} className={`story${storySeen ? ' in' : ''}`}>
+            <div className="wrap">
+              <div className="orn">❖ ❖ ❖</div>
+              <h2>A tawa, a notebook, a lot of ghee.</h2>
+              <p>
+                Our kitchen began with one cast-iron tawa and a family notebook of recipes. Today it is still that:
+                stone-ground batters fermented overnight, chutneys made each morning, and a menu that honours the
+                South while keeping it playful.
+              </p>
+            </div>
+          </section>
+        </main>
+
+        <footer className="wrap">
+          <div>
+            <h4>Hours</h4>
+            <p>
+              {settings.openingTime} – {settings.closingTime} · daily
+            </p>
+            <p>Contactless QR table ordering</p>
           </div>
-        )}
-      </AnimatePresence>
+          <div>
+            <h4>Find us</h4>
+            <p>{settings.address}</p>
+          </div>
+          <div>
+            <h4>Contact</h4>
+            <p>{settings.phone}</p>
+            {settings.email && <p>{settings.email}</p>}
+          </div>
+          <div className="fine">
+            {settings.name} · {settings.tagline} · FSSAI: {settings.fssaiNumber}
+          </div>
+        </footer>
 
-      {/* Food Detail Modal */}
+        {/* Floating order bar (opens the existing cart drawer) */}
+        <div className={`ob${orderBarVisible ? ' show' : ''}`} id="ob" aria-hidden={!orderBarVisible}>
+          <span id="obt">
+            {cartCount} {cartCount === 1 ? 'item' : 'items'} · {formatINR(cartTotal)}
+          </span>
+          <button type="button" id="obb" tabIndex={orderBarVisible ? 0 : -1} onClick={() => setIsCartOpen(true)}>
+            Review order
+          </button>
+        </div>
+
+        <div id="toast" className={toastVisible ? 'show' : ''} role="status" aria-live="polite">
+          {toast && (
+            <>
+              {toast.message}
+              {toast.undoItemId && (
+                <button
+                  type="button"
+                  id="undo"
+                  onClick={() => {
+                    updateCartQuantity(toast.undoItemId!, -1);
+                    setToastVisible(false);
+                  }}
+                >
+                  Undo
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Existing, unchanged-logic overlays (rendered outside .dk so the design's scoped CSS never touches them) */}
       <FoodDetailModal
         item={selectedItemForModal}
         isOpen={!!selectedItemForModal}
@@ -280,7 +402,6 @@ export const MenuPage: React.FC = () => {
         onAdd={handleModalAdd}
       />
 
-      {/* Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -290,12 +411,7 @@ export const MenuPage: React.FC = () => {
         }}
       />
 
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        tableCode={tableCode}
-      />
-    </div>
+      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} tableCode={tableCode} />
+    </>
   );
 };

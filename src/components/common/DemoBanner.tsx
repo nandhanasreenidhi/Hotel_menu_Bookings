@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
 import {
   QrCode,
+  Home,
   ConciergeBell,
   ChefHat,
   ShieldCheck,
@@ -22,7 +23,7 @@ export const DemoBanner: React.FC = () => {
 
   // Counts for operations badges
   const newOrdersCount = orders.filter(o => o.status === 'placed').length;
-  const kitchenOrdersCount = orders.filter(o => o.status === 'accepted' || o.status === 'preparing').length;
+  const kitchenOrdersCount = orders.filter(o => (o.status === 'accepted' && !!o.sentToKitchenAt) || o.status === 'preparing' || o.status === 'ready').length;
   const readyOrdersCount = orders.filter(o => o.status === 'ready').length;
 
   const handleTableChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -69,6 +70,19 @@ export const DemoBanner: React.FC = () => {
 
           {/* Quick Role Switcher */}
           <nav className="flex items-center gap-1 sm:gap-2">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all ${isActive
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-800/80'
+                }`
+              }
+              title="Main landing page"
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Home</span>
+            </NavLink>
             <NavLink
               to={`/menu/${activeTableCode || 'T-04'}`}
               className={({ isActive }) =>

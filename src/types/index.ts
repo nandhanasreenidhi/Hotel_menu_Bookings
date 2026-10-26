@@ -13,7 +13,8 @@ export interface MenuItem {
   dietary: DietaryType;
   spiceLevel?: SpiceLevel;
   isChefSpecial?: boolean;
-  preparationTimeMinutes: number;
+  isBestseller?: boolean;
+  preparationTimeMinutes: number; // 0 = not specified (UI hides it)
   calories?: number;
   allergens?: string[];
 }
